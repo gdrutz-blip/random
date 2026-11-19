@@ -1,5 +1,7 @@
 # Randomizer
 
+**Open it:** https://gdrutz-blip.github.io/random/
+
 A random group maker for the classroom, built for Building Thinking Classrooms and other subjects.
 
 - Keep-apart, keep-together and "with one of" rules
