@@ -746,7 +746,7 @@ function renderSettings(){
     <option value="bigger"${st.leftover==='bigger'?' selected':''}>Add extra students to other groups</option></select>`:''}
   <label class="check"><input type="checkbox" id="avoid"${st.avoidRepeats?' checked':''}> Try not to repeat partners from the last 3 rounds</label>
   <label class="check"><input type="checkbox" id="marker"${st.marker?' checked':''}> Pick who holds the marker first in each group</label>
-  <label class="check"><input type="checkbox" id="calc"${st.calc?' checked':''}> Pick who grabs a calculator (always someone different from the marker)</label>
+  <label class="check"><input type="checkbox" id="calc"${st.calc?' checked':''}> Pick who grabs a calculator</label>
   <label class="check"><input type="checkbox" id="roles-on"${st.roles?' checked':''}> Give each student in a group a role</label>
   ${st.roles?`<div class="stack roles-box"><div id="role-bar">${listBar('role',st)}</div>
     <label class="sr" for="roleList">Roles</label><textarea id="roleList" rows="3" placeholder="Scribe, Reporter, Timekeeper, Materials">${esc(st.roleList)}</textarea>
