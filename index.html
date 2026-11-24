@@ -442,6 +442,15 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const pickOne=a=>a[Math.random()*a.length|0];
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 const MARKER='<svg class="mk" viewBox="0 0 24 24" aria-label="starts with the marker" role="img"><path fill="currentColor" d="M14.6 3.2a2 2 0 0 1 2.8 0l3.4 3.4a2 2 0 0 1 0 2.8L10 20.2H5.8l-1.5 1.5-2-2 1.5-1.5V14z"/><path fill="var(--surface)" d="M6 15.2l2.8 2.8-1.3 1.3H5.2l-.5-.5v-2.3z"/></svg>';
+const CALC='<svg class="mk" viewBox="0 0 24 24" aria-label="grabs the calculator" role="img"><path fill="currentColor" fill-rule="evenodd" d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM7.5 4.5v3h9v-3zM8.5 10a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 0 0 0-2.5zM12 10a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 0 0 0-2.5zM15.5 10a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 0 0 0-2.5zM8.5 14.5a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 0 0 0-2.5zM12 14.5a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 0 0 0-2.5zM15.5 14.5a1.25 1.25 0 1 0 0 2.5a1.25 1.25 0 0 0 0-2.5z"/></svg>';
+const tokens=(g,id)=>(g.marker===id?MARKER:'')+(g.calc===id?CALC:'');
+/* marker and calculator holders: the calculator is always a different student from the marker */
+function fixTokens(c,g){
+  const st=c.settings;
+  if(st.marker){if(!g.ids.includes(g.marker)){if(g.ids.length)g.marker=pickOne(g.ids);else delete g.marker}}else delete g.marker;
+  if(st.calc&&g.ids.length>1){if(!g.ids.includes(g.calc)||g.calc===g.marker)g.calc=pickOne(g.ids.filter(i=>i!==g.marker))}else delete g.calc;
+}
+function fixAllTokens(c){const r=cur(c);if(r)r.groups.forEach(g=>fixTokens(c,g))}
 const SKINS=[
   {id:'auto',name:'Whiteboard (matches your device)',a:'#FFFFFF',b:'#1D5BC2'},
   {id:'chalk',name:'Chalkboard',a:'#1E3A2D',b:'#F5D76E'},
@@ -473,7 +482,7 @@ const STYLES={tumble:'Tumble',slot:'Slot machine',deal:'Card deal',rain:'Name ra
 /* no class lists are built in: each teacher adds their own, saved in their browser */
 const DEFAULT_LISTS=[];
 
-const defaultSettings=()=>({mode:'size',size:3,count:8,leftover:'smaller',titleStyle:'boards',titleList:'',avoidRepeats:true,marker:false,roles:false,roleList:'Scribe, Reporter, Timekeeper, Materials'});
+const defaultSettings=()=>({mode:'size',size:3,count:8,leftover:'smaller',titleStyle:'boards',titleList:'',avoidRepeats:true,marker:false,calc:false,roles:false,roleList:'Scribe, Reporter, Timekeeper, Materials'});
 function newClass(name){return {id:uid(),name:name||'My class',students:[],rules:[],custom:[],settings:defaultSettings(),rounds:[],sources:null}}
 /* adds any built-in class lists (none right now), reusing a class that already has that name */
 function seed(s){
@@ -639,7 +648,8 @@ function generate(c,history){
   const out=[];
   groups.forEach((g,gi)=>{const ids=shuffle(best.gs[gi].slice());if(!ids.length&&!g.customId)return;out.push({customId:g.customId,customTitle:g.title,ids})});
   out.forEach((g,i)=>{g.title=(g.customTitle&&g.customTitle.trim())||titleFor(i,c.settings);delete g.customTitle;
-    if(c.settings.marker&&g.ids.length)g.marker=pickOne(g.ids)});
+    if(c.settings.marker&&g.ids.length)g.marker=pickOne(g.ids);
+    if(c.settings.calc&&g.ids.length>1)g.calc=pickOne(g.ids.filter(x=>x!==g.marker))});
   return out;
 }
 function check(c,groups){
@@ -714,7 +724,7 @@ function renderStudents(){
   ${list.length?'<p class="note">Tap a name to mark them absent. Absences clear by themselves each new day and carry over between classes.</p>':''}
   <div class="row">${c.sources?'':`<button class="btn" data-act="roster-edit">${c.students.length?'Edit list':'Add students'}</button>`}${away?'<button class="btn" data-act="all-here">Everyone’s here</button>':''}</div>`;
 }
-function renderMorePill(){const st=cls().settings,on=[st.marker&&'marker',st.roles&&'roles'].filter(Boolean);$('#more-count').textContent=on.length?' · '+on.join(', ')+' on':''}
+function renderMorePill(){const st=cls().settings,on=[st.marker&&'marker',st.calc&&'calculator',st.roles&&'roles'].filter(Boolean);$('#more-count').textContent=on.length?' · '+on.join(', ')+' on':''}
 function renderSettings(){
   const c=cls(),st=c.settings,el=$('#settings');
   renderMorePill();
@@ -736,6 +746,7 @@ function renderSettings(){
     <option value="bigger"${st.leftover==='bigger'?' selected':''}>Add extra students to other groups</option></select>`:''}
   <label class="check"><input type="checkbox" id="avoid"${st.avoidRepeats?' checked':''}> Try not to repeat partners from the last 3 rounds</label>
   <label class="check"><input type="checkbox" id="marker"${st.marker?' checked':''}> Pick who holds the marker first in each group</label>
+  <label class="check"><input type="checkbox" id="calc"${st.calc?' checked':''}> Pick who grabs a calculator (always someone different from the marker)</label>
   <label class="check"><input type="checkbox" id="roles-on"${st.roles?' checked':''}> Give each student in a group a role</label>
   ${st.roles?`<div class="stack roles-box"><div id="role-bar">${listBar('role',st)}</div>
     <label class="sr" for="roleList">Roles</label><textarea id="roleList" rows="3" placeholder="Scribe, Reporter, Timekeeper, Materials">${esc(st.roleList)}</textarea>
@@ -843,14 +854,14 @@ function renderResults(){
   const sel=ui.edit?ui.sel:null,selIn=sel?whereIs(groups,sel):-1;
   el.innerHTML=groups.map((g,gi)=>`<article class="card" style="--m:var(--m${gi%6+1})"><header>
     <input type="text" class="gtitle" id="gt-${gi}" data-gi="${gi}" value="${esc(g.title)}" aria-label="Group name"><span class="cnt">${g.ids.length}</span></header>
-    <ul>${g.ids.map(id=>ui.edit?`<li><button class="mem${sel===id?' sel':''}" data-act="ed-pick" data-id="${id}"><span class="mn">${esc(nameOf(id))}</span>${g.marker===id?MARKER:''}${roleTag(g,id)}</button></li>`:`<li><span class="mem"><span class="mn">${esc(nameOf(id))}</span>${g.marker===id?MARKER:''}${roleTag(g,id)}</span></li>`).join('')||'<li class="note" style="padding:5px 8px">Empty</li>'}</ul>
+    <ul>${g.ids.map(id=>ui.edit?`<li><button class="mem${sel===id?' sel':''}" data-act="ed-pick" data-id="${id}"><span class="mn">${esc(nameOf(id))}</span>${tokens(g,id)}${roleTag(g,id)}</button></li>`:`<li><span class="mem"><span class="mn">${esc(nameOf(id))}</span>${tokens(g,id)}${roleTag(g,id)}</span></li>`).join('')||'<li class="note" style="padding:5px 8px">Empty</li>'}</ul>
     ${sel&&selIn!==gi?`<button class="btn small moveto" data-act="ed-move" data-gi="${gi}">${selIn<0?'Put':'Move'} ${esc(nameOf(sel))} here</button>`:''}</article>`).join('');
   const issues=check(c,groups);
   const ruleIssues=issues.filter(x=>!x.solo),solo=issues.filter(x=>x.solo).map(x=>x.t);
   const shown=store.hideRules?(ruleIssues.length?[`${plural(ruleIssues.length,'rule')} ${ruleIssues.length===1?"wasn't":"weren't"} met. Click <b>Show</b> on Rules to see which.`]:[]):ruleIssues;
   issuesEl.innerHTML=issues.length?shown.concat(solo).map(t=>`<p class="issue">${t}</p>`).join(''):(rulesOf(c).length||c.custom.length?'<p class="allgood">Every rule is met.</p>':'');
   $('#keep-row').innerHTML=`<button class="btn small" data-act="keep-titles">Keep these group names</button><span class="note">Renamed a group above? This uses the same names next time you shuffle.</span>`;
-  $('#swap-hint').innerHTML=ui.edit?'':`Need to change something? Click <b>Edit groups</b> to swap students, move them, or take someone out. Click a group name to rename it.${c.settings.marker?' The marker icon shows who writes first.':''}`;
+  $('#swap-hint').innerHTML=ui.edit?'':`Need to change something? Click <b>Edit groups</b> to swap students, move them, or take someone out. Click a group name to rename it.${c.settings.marker?' The marker icon shows who writes first.':''}${c.settings.calc?' The calculator icon shows who grabs the calculator.':''}`;
 }
 /* ---------- editing groups after a shuffle ---------- */
 const whereIs=(groups,id)=>groups.findIndex(g=>g.ids.includes(id));
@@ -865,7 +876,7 @@ function editBarHTML(){
     ${out.length?`<div class="ebar-out"><span class="lbl2">Not in a group</span>${out.map(s=>`<button class="ochip${s.absent?' abs':''}${sel===s.id?' sel':''}" data-act="ed-pick" data-id="${s.id}" title="${s.absent?'Marked absent. Put them in a group to mark them here.':''}">${esc(s.name)}</button>`).join('')}</div>`:''}
     ${solo.length?`<p class="ebar-warn">${solo.join(', ')} ${solo.length===1?'has':'have'} only 1 student.</p>`:''}`;
 }
-function renderEdit(){renderResults();renderHistory();renderStudents();renderSettings();if(!$('#present').hidden)renderPresent()}
+function renderEdit(){fixAllTokens(cls());save();renderResults();renderHistory();renderStudents();renderSettings();if(!$('#present').hidden)renderPresent()}
 function markHere(id){const s=studentsOf(cls()).find(x=>x.id===id);if(s&&s.absent){s.absent=false;store.absentDay=today()}}
 function renderHistory(){
   const c=cls(),el=$('#history'),rs=c.rounds;
@@ -937,7 +948,7 @@ function renderPresent(){
   const broken=check(c,groups).filter(x=>!x.solo).length;
   $('#present-sub').textContent=(c.settings.titleStyle==='boards'?'Find your board!':'Find your group!')+(broken?` · ⚠ ${broken} rule${broken===1?'':'s'} not met (see teacher view)`:'');
   const ed=ui.edit;
-  grid.innerHTML=groups.map((g,gi)=>`<section class="pcard${ed?' editing':''}" style="--m:var(--m${gi%6+1})"${ed?` data-act="ed-move" data-gi="${gi}"`:''}><h3>${esc(g.title)}</h3><ul>${g.ids.map(id=>ed?`<li class="pn"><button class="pn-btn${ui.sel===id?' sel':''}" data-act="ed-pick" data-id="${id}"><span class="pname">${esc(nameOf(id))}</span>${g.marker===id?MARKER:''}${roleTag(g,id)}</button></li>`:`<li class="pn"><span class="pname">${esc(nameOf(id))}</span>${g.marker===id?MARKER:''}${roleTag(g,id)}</li>`).join('')||(ed?'<li class="pn pn-empty">Empty</li>':'')}</ul></section>`).join('');
+  grid.innerHTML=groups.map((g,gi)=>`<section class="pcard${ed?' editing':''}" style="--m:var(--m${gi%6+1})"${ed?` data-act="ed-move" data-gi="${gi}"`:''}><h3>${esc(g.title)}</h3><ul>${g.ids.map(id=>ed?`<li class="pn"><button class="pn-btn${ui.sel===id?' sel':''}" data-act="ed-pick" data-id="${id}"><span class="pname">${esc(nameOf(id))}</span>${tokens(g,id)}${roleTag(g,id)}</button></li>`:`<li class="pn"><span class="pname">${esc(nameOf(id))}</span>${tokens(g,id)}${roleTag(g,id)}</li>`).join('')||(ed?'<li class="pn pn-empty">Empty</li>':'')}</ul></section>`).join('');
   fitPresent();
 }
 /* sizes the class view so every group fits on one screen with the biggest text possible */
@@ -959,7 +970,7 @@ function fitPresent(){
   const ctx=fitCanvas.getContext('2d');const h3=grid.querySelector('.pcard h3');
   const bodyF=getComputedStyle(grid).fontFamily,dispF=h3?getComputedStyle(h3).fontFamily:bodyF;
   ctx.font=`700 100px ${bodyF}`;let nameW=1;
-  groups.forEach(g=>g.ids.forEach(id=>{const role=g.roles&&g.roles[id];nameW=Math.max(nameW,ctx.measureText(nameOf(id)).width/100+(g.marker===id?1.35:0)+(role?ctx.measureText(role.toUpperCase()).width/100*.62+1.1:0))}));
+  groups.forEach(g=>g.ids.forEach(id=>{const role=g.roles&&g.roles[id];nameW=Math.max(nameW,ctx.measureText(nameOf(id)).width/100+((g.marker===id?1.35:0)+(g.calc===id?1.35:0))+(role?ctx.measureText(role.toUpperCase()).width/100*.62+1.1:0))}));
   ctx.font=`700 100px ${dispF}`;let titleW=1;groups.forEach(g=>{titleW=Math.max(titleW,ctx.measureText(g.title).width/100)});
   const n=groups.length,k=Math.max(1,...groups.map(g=>g.ids.length)),TR=1.15;
   let best=null;
@@ -1223,7 +1234,7 @@ function copyText(text,btn){
 }
 function groupsText(){
   const c=cls(),groups=liveGroups(c);if(!groups)return '';
-  return groups.map(g=>`${g.title}: ${g.ids.map(id=>nameOf(id)+(g.roles&&g.roles[id]?` (${g.roles[id]})`:'')+(g.marker===id?' (marker)':'')).join(', ')}`).join('\n');
+  return groups.map(g=>`${g.title}: ${g.ids.map(id=>nameOf(id)+(g.roles&&g.roles[id]?` (${g.roles[id]})`:'')+(g.marker===id?' (marker)':'')+(g.calc===id?' (calculator)':'')).join(', ')}`).join('\n');
 }
 function checkedSources(){return [...document.querySelectorAll('.srcbox:checked')].map(b=>b.value)}
 
@@ -1389,7 +1400,7 @@ document.addEventListener('change',e=>{
   if(t.id==='leftover'){c.settings.leftover=t.value;save();renderSettings();return}
   if(t.id==='titleStyle'){c.settings.titleStyle=t.value;save();renderSettings();return}
   if(t.id==='avoid'){c.settings.avoidRepeats=t.checked;save();return}
-  if(t.id==='marker'){c.settings.marker=t.checked;save();renderMorePill();return}
+  if(t.id==='marker'||t.id==='calc'){c.settings[t.id]=t.checked;fixAllTokens(c);save();renderMorePill();renderResults();if(!$('#present').hidden&&!ui.dealing)renderPresent();return}
   if(t.id==='num'){renderSettings();return}
   if(t.id==='hist-student'){ui.histStudent=t.value;renderHistory();const s=$('#hist-student');if(s)s.focus();return}
   if(t.id==='pick-norep'){store.pickNoRepeat=t.checked;save();renderPickMode();return}
