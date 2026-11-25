@@ -178,6 +178,9 @@ details.fold>summary:hover{color:var(--ink)}
 .welcome{max-width:1240px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;background:var(--accent-soft);border-radius:var(--r);padding:12px 16px}
 .welcome-in{display:flex;flex-direction:column;gap:2px;flex:1 1 300px;min-width:0}
 .welcome p{margin:0}
+.more-tools{max-width:1240px;margin:34px auto 0;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;font-size:13px;color:var(--muted)}
+.more-tools a{color:var(--muted);text-underline-offset:3px}
+.more-tools a:hover{color:var(--accent)}
 .fold-eye{display:flex;justify-content:flex-end;margin-bottom:-6px}
 .status{font-size:13px;margin:0}
 .status.good{color:var(--ok)} .status.bad{color:var(--warn)}
@@ -369,6 +372,8 @@ span.mem:hover{background:transparent}
   </section>
 </main>
 
+<footer class="more-tools" id="more-tools" hidden></footer>
+
 <div class="mobile-go" id="mobile-go"><button class="btn big" data-act="generate-mobile">Make groups</button><button class="btn primary big" data-act="present">Class view</button></div>
 
 <div class="present" id="present" hidden role="dialog" aria-modal="true" aria-labelledby="present-h">
@@ -476,6 +481,33 @@ function showQuote(animate){
   if(!animate||reduced){put();return}
   els.forEach(el=>el.classList.add('fade'));setTimeout(put,220);
 }
+/* links to the author's other tools. The list lives in tools.json (one file for every site);
+   this built-in copy is used when that file can't be loaded. */
+const TOOLS_URL='https://gdrutz-blip.github.io/random/tools.json',TOOLS_OK='https://gdrutz-blip.github.io/';
+let toolsList={heading:'More from Mr. Drutz',tools:[
+  {name:'Class Randomizer',url:'https://gdrutz-blip.github.io/random/'},
+  {name:'Gym Team Maker',url:'https://gdrutz-blip.github.io/teambuilder/'},
+  {name:'Improv Scene Starter',url:'https://gdrutz-blip.github.io/drama-generator/'},
+  {name:'Seating Planner',url:'https://gdrutz-blip.github.io/seatingplanner/'},
+  {name:'Math Strings',url:'https://gdrutz-blip.github.io/math-strings/'}]};
+function renderTools(){
+  const f=$('#more-tools');if(!f)return;
+  const here=location.pathname.replace(/index\.html$/,'').replace(/\/?$/,'/');
+  const links=toolsList.tools.filter(t=>{try{const u=new URL(t.url);return u.href.startsWith(TOOLS_OK)&&u.pathname.replace(/\/?$/,'/')!==here}catch(e){return false}});
+  f.textContent='';
+  if(!links.length||!store.showTools){f.hidden=true;return}
+  const h=document.createElement('span');h.textContent=toolsList.heading+':';f.appendChild(h);
+  links.forEach(t=>{const a=document.createElement('a');a.href=t.url;a.target='_blank';a.rel='noopener';a.textContent=t.name;f.appendChild(a)});
+  f.hidden=false;
+}
+function loadTools(){
+  try{fetch(TOOLS_URL).then(r=>r.ok?r.json():null).then(d=>{
+    if(!d||!Array.isArray(d.tools))return;
+    const tools=d.tools.filter(t=>t&&typeof t.name==='string'&&typeof t.url==='string').map(t=>({name:t.name.slice(0,40),url:t.url}));
+    if(!tools.length)return;
+    toolsList={heading:String(d.heading||toolsList.heading).slice(0,60),tools};renderTools();
+  }).catch(()=>{})}catch(e){}
+}
 const ANIMS={full:'Normal speed',quick:'Quick'};
 const STYLES={tumble:'Tumble',slot:'Slot machine',deal:'Card deal',rain:'Name rain',whirl:'Whirlpool',pop:'Pop'};
 
@@ -513,7 +545,7 @@ function normalize(s){
   if(!s.classes.some(c=>c.id===s.currentId))s.currentId=s.classes[0].id;
   s.seed=Math.max(s.seed||0,3);
   s.titleSets=Array.isArray(s.titleSets)?s.titleSets:[];s.hideRules=!!s.hideRules;s.open=s.open&&typeof s.open==='object'?s.open:{};if(s.welcomed===undefined)s.welcomed=s.classes.some(c=>c.rounds.length>0);delete s.showQuotes;s.roleSets=Array.isArray(s.roleSets)?s.roleSets:[];
-  s.showQuotesClass=s.showQuotesClass!==false;delete s.quoteFacts;
+  s.showQuotesClass=s.showQuotesClass!==false;s.showTools=s.showTools!==false;delete s.quoteFacts;
   s.skin=s.skin||'auto';if(s.anim==='off'){s.anim='full';s.animStyle='none'}s.anim=s.anim==='quick'?'quick':'full';s.animStyle=s.animStyle||'tumble';s.pickNoRepeat=s.pickNoRepeat!==false;
   return s;
 }
@@ -904,10 +936,12 @@ function renderHistory(){
 }
 /* display options are per browser, so each teacher sets their own */
 function renderDisplay(){
-  $('#display').innerHTML=`<label class="check"><input type="checkbox" id="disp-quotes-class"${store.showQuotesClass?' checked':''}> Show a quote in Class view (the projector screen)</label>`;
+  $('#display').innerHTML=`<label class="check"><input type="checkbox" id="disp-quotes-class"${store.showQuotesClass?' checked':''}> Show a quote in Class view (the projector screen)</label>
+  <label class="check"><input type="checkbox" id="disp-tools"${store.showTools?' checked':''}> Show links to Mr. Drutz’s other tools at the bottom of the page</label>`;
 }
 function applyDisplay(){
   $('#present-quote').hidden=!store.showQuotesClass;
+  renderTools();
   if(!$('#present').hidden&&!ui.dealing)fitPresent();
 }
 function applyFolds(){document.querySelectorAll('details.fold').forEach(d=>{const want=!!store.open[d.dataset.k];if(d.open!==want)d.open=want})}
@@ -1396,6 +1430,7 @@ document.addEventListener('change',e=>{
   if(t.classList.contains('ls-pick')){const L=LISTS[t.dataset.kind],set=store[L.sets].find(x=>x.id===t.value);if(set){c.settings[L.text]=set.text;c.settings[L.id]=set.id}else c.settings[L.id]=null;ui.lsDel=null;save();renderSettings();return}
   if(t.id==='roles-on'){c.settings.roles=t.checked;save();renderSettings();return}
   if(t.id==='anim-style'){store.animStyle=t.value;save();renderPresentCtrls();return}
+  if(t.id==='disp-tools'){store.showTools=t.checked;save();renderTools();return}
   if(t.id==='disp-quotes-class'){store.showQuotesClass=t.checked;save();applyDisplay();renderDisplay();return}
   if(t.id==='leftover'){c.settings.leftover=t.value;save();renderSettings();return}
   if(t.id==='titleStyle'){c.settings.titleStyle=t.value;save();renderSettings();return}
@@ -1425,7 +1460,7 @@ window.addEventListener('resize',refit);document.addEventListener('fullscreencha
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refit);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&checkDay())renderAll()});
 
-checkDay();applySkin();applyDisplay();applyFolds();renderWelcome();showQuote(false);
+checkDay();applySkin();applyDisplay();applyFolds();renderWelcome();showQuote(false);loadTools();
 if(!cls().sources&&!cls().students.length)ui.editRoster=true;
 renderAll();
 })();
