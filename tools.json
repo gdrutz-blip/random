@@ -1,10 +1,10 @@
 {
   "heading": "More from Mr. Drutz",
   "tools": [
-    { "name": "Class Randomizer", "url": "https://gdrutz-blip.github.io/random/" },
-    { "name": "Gym Team Maker", "url": "https://gdrutz-blip.github.io/teambuilder/" },
-    { "name": "Improv Scene Starter", "url": "https://gdrutz-blip.github.io/drama-generator/" },
+    { "name": "Randomizer", "url": "https://gdrutz-blip.github.io/random/" },
     { "name": "Seating Planner", "url": "https://gdrutz-blip.github.io/seatingplanner/" },
-    { "name": "Math Strings", "url": "https://gdrutz-blip.github.io/math-strings/" }
+    { "name": "Math Strings", "url": "https://gdrutz-blip.github.io/math-strings/" },
+    { "name": "Gym Team Maker", "url": "https://gdrutz-blip.github.io/teambuilder/" },
+    { "name": "Drama Scene Builder", "url": "https://gdrutz-blip.github.io/drama-generator/" }
   ]
 }

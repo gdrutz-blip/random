@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Class Randomizer</title>
+<title>Randomizer</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -485,11 +485,11 @@ function showQuote(animate){
    this built-in copy is used when that file can't be loaded. */
 const TOOLS_URL='https://gdrutz-blip.github.io/random/tools.json',TOOLS_OK='https://gdrutz-blip.github.io/';
 let toolsList={heading:'More from Mr. Drutz',tools:[
-  {name:'Class Randomizer',url:'https://gdrutz-blip.github.io/random/'},
-  {name:'Gym Team Maker',url:'https://gdrutz-blip.github.io/teambuilder/'},
-  {name:'Improv Scene Starter',url:'https://gdrutz-blip.github.io/drama-generator/'},
+  {name:'Randomizer',url:'https://gdrutz-blip.github.io/random/'},
   {name:'Seating Planner',url:'https://gdrutz-blip.github.io/seatingplanner/'},
-  {name:'Math Strings',url:'https://gdrutz-blip.github.io/math-strings/'}]};
+  {name:'Math Strings',url:'https://gdrutz-blip.github.io/math-strings/'},
+  {name:'Gym Team Maker',url:'https://gdrutz-blip.github.io/teambuilder/'},
+  {name:'Drama Scene Builder',url:'https://gdrutz-blip.github.io/drama-generator/'}]};
 function renderTools(){
   const f=$('#more-tools');if(!f)return;
   const here=location.pathname.replace(/index\.html$/,'').replace(/\/?$/,'/');
